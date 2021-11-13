@@ -1,0 +1,4 @@
+DO NOT COMMIT!!!!!!!!!!!!
+
+DATABASE_CLOUD='mongodb+srv://Jinjoe:panther69@cluster0.u2vof.mongodb.net/seoblog?retryWrites=true&w=majority'
+JWT_SECRET=KDJHF7823RHIU3289FJ932I2G8FG239
