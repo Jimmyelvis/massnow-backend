@@ -34,7 +34,7 @@ app.use(cookieParser());
 if (process.env.NODE_ENV === 'development') {
     app.use(cors({ origin: `${process.env.CLIENT_URL}` }));
 } else {
-    app.use(cors({ origin: "https://massnow-news.netlify.app/" }));
+    app.use(cors({ origin: `${process.env.PRODUCTION_URL}` }));
 }
 
 /**
