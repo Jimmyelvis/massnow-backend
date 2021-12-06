@@ -33,7 +33,16 @@ app.use(cookieParser());
 // cors
 if (process.env.NODE_ENV === 'development') {
     app.use(cors({ origin: `${process.env.CLIENT_URL}` }));
+} else {
+    app.use(cors({ origin: "https://massnow-news.netlify.app/" }));
 }
+
+/**
+ * https://youtu.be/UaXzbv3W4jo?t=1344
+ * Can't commit this to github has to change back to orig setup
+ * Only for heroku
+ */
+
 // routes middleware
 app.use('/api', blogRoutes);
 app.use('/api', authRoutes);
