@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const categoryRoutes = require('./routes/category');
 const tagRoutes = require('./routes/tag');
+const commentRoutes = require('./routes/comment');
 
 
 
@@ -20,7 +21,7 @@ const app = express();
 // db
 mongoose
     .connect(process.env.DATABASE_CLOUD, { useNewUrlParser: true, useCreateIndex: true, useFindAndModify: false })
-    .then(() => console.log('DB connected'))
+    .then(() => console.log('DB connected to ' + process.env.DATABASE_CLOUD))
     .catch(err => {
         console.log(err);
     });
@@ -49,6 +50,8 @@ app.use('/api', authRoutes);
 app.use('/api', userRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', tagRoutes);
+app.use("/api", commentRoutes);
+
 
 
 

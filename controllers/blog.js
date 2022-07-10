@@ -1,5 +1,6 @@
 const Blog = require('../models/blog');
 const Category = require('../models/category');
+const User = require('../models/user')
 const Tag = require('../models/tag');
 const formidable = require('formidable');
 const slugify = require('slugify');
@@ -8,6 +9,7 @@ const _ = require('lodash');
 const { errorHandler } = require('../helpers/dbErrorHandler');
 const fs = require('fs');
 const { smartTrim } = require('../helpers/blog');
+const { ObjectId } = require('mongoose');
 
 exports.create = (req, res) => {
     let form = new formidable.IncomingForm();
@@ -130,6 +132,7 @@ exports.list = (req, res) => {
       .populate("categories", "_id name slug")
       // .populate('tags', '_id name slug')
       .populate("postedBy", "_id name username")
+      .sort({ createdAt: -1 })
       .select(
         "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
       )
@@ -141,6 +144,378 @@ exports.list = (req, res) => {
         }
         res.json(data);
       });
+};
+
+exports.listTopNews = (req, res) => {
+  Blog.find({ featuredTopstory: { $gt: 0 } })
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ featuredTopstory: 1 })
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+      res.json(data);
+    });
+};
+
+exports.listNotTopNews = (req, res) => {
+  Blog.find({ featuredTopstory: { $lt: 1 } })
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+      res.json(data);
+    });
+};
+
+exports.getSportsNews = (req, res) => {
+  /** We have to search by category ID */
+
+  Blog.find({ categories: "5f7ba80ff98efee1d0650deb" })
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ createdAt: -1 })
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: err,
+        });
+      }
+      res.json(data);
+    });
+};
+
+
+exports.listFeaturedSportsNews = (req, res) => {
+  Blog.find({ featuredSports: { $gt: 0 } })
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ featuredSports: 1 })
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+      res.json(data);
+    });
+};
+
+exports.notListFeaturedSportsNews = (req, res) => {
+
+   /** We have to search by category ID */ 
+
+  Blog.find({  $and: [{ categories: "5f7ba80ff98efee1d0650deb" }, {featuredSports: { $lt: 1 }}] })
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ createdAt: -1 })
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: err,
+        });
+      }
+      res.json(data);
+    });
+};
+
+exports.listFeaturedLocalNews = (req, res) => {
+  Blog.find({ featuredLocal: { $gt: 0 } })
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ featuredLocal: 1 })
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+      res.json(data);
+    });
+};
+
+exports.notListFeaturedLocalNews = (req, res) => {
+  /** We have to search by category ID */
+
+  Blog.find({
+    $and: [
+      { categories: "5f7ba819f98efee1d0650dec" },
+      { featuredLocal: { $lt: 1 } },
+    ],
+  })
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ createdAt: -1 })
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: err,
+        });
+      }
+      res.json(data);
+    });
+};
+
+exports.addToFavorites = (req, res) => {
+  const user_id = req.body.user_id
+  const post_id = req.body.post_id
+  const post_title = req.body.post_title
+  const mainPhoto = req.body.mainPhoto
+  const postAuthor = req.body.postAuthor
+  const slug = req.body.slug
+
+  User.findById(user_id, (error, results) => {
+
+     if (error) {
+        res.json({
+          error: error,
+        });
+        console.log(error);
+     }
+
+    //  console.log('===============title=====================');
+    //  console.log(req.body);
+    //  console.log('====================================');
+
+     const newFavoritePost = {
+       post_title,
+       mainPhoto,
+       postAuthor,
+       slug,
+       user_id,
+       post_id,
+       time_added : Date.now()
+     };
+
+    //  res.json(newFavoritePost)
+
+     results.favorite_articles.push(newFavoritePost);
+     console.log(results)
+     results.save((error, response) => {
+       res.json({
+         msg: 'Successfully Added Article'
+       })
+     })
+  })
+
+  // res.json({ mgs: "Cool", post_id: post_id, user_id: user_id });
+};
+
+exports.removeFromFavorites = (req, res) => {
+  const user_id = req.body.user_id;
+  const post_id = req.body.post_id;
+
+  User.findById(user_id, (error, results) => {
+
+    if (error) {
+      res.json({
+        error: error,
+      });
+      console.log(error);
+    }
+
+    console.log('====================================');
+    console.log(post_id);
+    console.log('====================================');
+
+   let newResults = results.favorite_articles.filter((elem) => {
+      return elem.post_id !== post_id
+    })
+
+
+    results.favorite_articles = newResults
+    results.save((error, response) => {
+      res.json({
+        msg: "Removed From Favorites",
+      });
+    });
+
+    // res.json(newResults);
+
+  })
+}
+
+/**
+ * @route api/blogs/edit-topnews/
+ * @access Private
+ * 
+ * This the api route for editing the top news section on the front
+ * end. We need to take in three parameters on the req.body:
+ * -- prevPostId this is the id of the post that will be replaced
+ * -- nextPostId this is the id of the post that we are inserting in
+ *    the top news section
+ * -- nextPostPosNumber this the position number that the newly inserted
+ *    post will be placed in.
+ * 
+ * We first need to find the id of the post that we are taking out of the top
+ * news section, using const prevPost, if we don't have any problems finding
+ * then we set its (featuredTopstory) value to 0 which will take it out of that
+ * section. We repeat the finding step but now with the id of the new post
+ * that we're inserting into that section const nextPost.
+ * 
+ * We then set its (featuredTopstory) value to the req.body.nextPostPosNumber value
+ * that we get from the req object. If everything is successful we will respond with
+ * the new post.
+ */
+exports.editTopNewsSection = (req, res) => {
+
+    const prevPost = req.body.prevPostId;
+    const nextPost = req.body.nextPostId;
+    const nextPostPosNumber= req.body.nextPostPosNumber;
+
+    
+    Blog.findById(prevPost, (error, prevPostresult) => {
+
+      if (error) {
+        res.json({
+          error: error,
+        });
+        console.log(error);
+      } 
+
+      else if (nextPost === "" || undefined || null) {
+          res.json({ msg: "nextPostId is missing" });
+      } 
+      
+      else {
+        prevPostresult.featuredTopstory = 0;
+        console.log(prevPostresult);
+        prevPostresult.save((error, updatedRecord) => {
+          console.log("success");
+        });
+
+        Blog.findById(nextPost, (error, nextPostresult) => {
+          if (error) {
+            res.json({
+              error: error,
+            });
+            console.log(error);
+          } else {
+            nextPostresult.featuredTopstory = nextPostPosNumber;
+            console.log(nextPostresult);
+            nextPostresult.save((error, updatedRecord) => {
+              res.json({
+                msg: `Successfully Replaced with ${updatedRecord.title}`,
+              });
+              console.log("success");
+            });
+          }
+        });
+      }
+    });
+
+     
+}
+
+
+exports.editTopSportsNewsSection = (req, res) => {
+  const prevPost = req.body.prevPostId;
+  const nextPost = req.body.nextPostId;
+  const nextPostPosNumber = req.body.nextPostPosNumber;
+
+  Blog.findById(prevPost, (error, prevPostresult) => {
+    if (error) {
+      res.json({
+        error: error,
+      });
+      console.log(error);
+    } else if (nextPost === "" || undefined || null) {
+      res.json({ msg: "nextPostId is missing" });
+    } else {
+      prevPostresult.featuredSports = 0;
+      console.log(prevPostresult);
+      prevPostresult.save((error, updatedRecord) => {
+        console.log("success");
+      });
+
+      Blog.findById(nextPost, (error, nextPostresult) => {
+        if (error) {
+          res.json({
+            error: error,
+          });
+          console.log(error);
+        } else {
+          nextPostresult.featuredSports = nextPostPosNumber;
+          console.log(nextPostresult);
+          nextPostresult.save((error, updatedRecord) => {
+            res.json({
+              msg: `Successfully Replaced with ${updatedRecord.title}`,
+            });
+            console.log("success");
+          });
+        }
+      });
+    }
+  });
+};
+
+exports.editTopLocalNewsSection = (req, res) => {
+  const prevPost = req.body.prevPostId;
+  const nextPost = req.body.nextPostId;
+  const nextPostPosNumber = req.body.nextPostPosNumber;
+
+  Blog.findById(prevPost, (error, prevPostresult) => {
+    if (error) {
+      res.json({
+        error: error,
+      });
+      console.log(error);
+    } else if (nextPost === "" || undefined || null) {
+      res.json({ msg: "nextPostId is missing" });
+    } else {
+      prevPostresult.featuredLocal = 0;
+      console.log(prevPostresult);
+      prevPostresult.save((error, updatedRecord) => {
+        console.log("success");
+      });
+
+      Blog.findById(nextPost, (error, nextPostresult) => {
+        if (error) {
+          res.json({
+            error: error,
+          });
+          console.log(error);
+        } else {
+          nextPostresult.featuredLocal = nextPostPosNumber;
+          console.log(nextPostresult);
+          nextPostresult.save((error, updatedRecord) => {
+            res.json({
+              msg: `Successfully Replaced with ${updatedRecord.title}`,
+            });
+            console.log("success");
+          });
+        }
+      });
+    }
+  });
 };
 
 exports.listAllBlogsCategoriesTags = (req, res) => {
@@ -191,21 +566,30 @@ exports.listAllBlogsCategoriesTags = (req, res) => {
       });
 };
 
+
+/**
+ * 
+ * Find A single Blog 
+ * Using  the slug 
+ * 
+ */
 exports.read = (req, res) => {
     const slug = req.params.slug.toLowerCase();
     Blog.findOne({ slug })
-        .populate('categories', '_id name slug')
-        .populate('postedBy', '_id name username photo')
-        .select('_id title body slug subtitle mtitle mdesc mainphoto categories tags postedBy createdAt updatedAt')
-        .exec((err, data) => {
-            if (err) {
-                return res.json({
-                    error: errorHandler(err)
-                });
-            }
-            res.json(data);
-        
-        });
+      .populate("categories", "_id name slug")
+      .populate("postedBy", "_id name username photo")
+      .select(
+        "_id title body slug subtitle mtitle mdesc mainphoto categories tags postedBy createdAt featuredTopstory featuredLocal featuredSports  updatedAt"
+      )
+      .exec((err, data) => {
+        if (err) {
+          return res.json({
+            error: errorHandler(err),
+          });
+        }
+        res.json(data);
+      });
+
 };
 
 exports.remove = (req, res) => {
