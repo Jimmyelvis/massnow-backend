@@ -13,54 +13,103 @@ exports.signup = (req, res) => {
                 error: 'Email is taken'
             });
         }
-
-        const { name, email, password, username } = req.body;
-        // let username = shortId.generate();
-        let profile = `${process.env.CLIENT_URL}/profile/${username}`;
-
-        let newUser = new User({ name, email, password, profile, username });
-        newUser.save((err, success) => {
-            if (err) {
+        
+        
+        User.findOne({ username: req.body.username }).exec((err, user) => {
+            
+            if (user) {
                 return res.status(400).json({
-                    error: err
+                    error: "Username already exists"
                 });
+                
             }
-            // res.json({
-            //     user: success
-            // });
-            res.json({
-                message: 'Signup success! Please signin.'
+
+            const { name, email, password, username } = req.body;
+
+            // let username = shortId.generate();
+            let profile = `${process.env.CLIENT_URL}/profile/${username}`;
+    
+            // set the hashed_password to === req.body.password
+            let hashed_password = password;
+    
+            let newUser = new User({ name, email, hashed_password, profile, username });
+            newUser.save((err, success) => {
+                if (err) {
+                    return res.status(400).json({
+                        error: err
+                    });
+                }
+                // res.json({
+                //     user: success
+                // });
+                res.json({
+                    message: 'Signup success! Please signin.'
+                });
             });
-        });
+
+        })
+
+
     });
 };
+
+// exports.signin = (req, res) => {
+//     const { email, password } = req.body;
+//     // check if user exist
+//     User.findOne({ email }).exec((err, user) => {
+//         if (err || !user) {
+//             return res.status(400).json({
+//                 error: 'User with that email does not exist. Please signup.'
+//             });
+//         }
+//         // authenticate
+//         if (!user.authenticate(password)) {
+//             return res.status(400).json({
+//                 error: 'Email and password do not match.'
+//             });
+//         }
+//         // generate a token and send to client
+//         const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+//         res.cookie('token', token, { expiresIn: '7d' });
+//         const { _id, username, name, email, role, photo } = user;
+//         return res.json({
+//             token,
+//             user: { _id, username, name, email, role, photo }
+//         });
+//     });
+// };
+
 
 exports.signin = (req, res) => {
-    const { email, password } = req.body;
-    // check if user exist
-    User.findOne({ email }).exec((err, user) => {
-        if (err || !user) {
-            return res.status(400).json({
-                error: 'User with that email does not exist. Please signup.'
-            });
-        }
-        // authenticate
-        if (!user.authenticate(password)) {
-            return res.status(400).json({
-                error: 'Email and password do not match.'
-            });
-        }
-        // generate a token and send to client
-        const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-        res.cookie('token', token, { expiresIn: '7d' });
-        const { _id, username, name, email, role, photo } = user;
-        return res.json({
-            token,
-            user: { _id, username, name, email, role, photo }
-        });
+  const { email, password } = req.body;
+  // check if user exist
+  User.findOne({ email }).exec((err, user) => {
+    if (err || !user) {
+      return res.status(400).json({
+        error: "User with that email does not exist. Please signup.",
+      });
+    }
+    // authenticate
+    if (!user.matchPassword(password)) {
+      return res.status(400).json({
+        error: "Email and password do not match.",
+      });
+    }
+    // generate a token and send to client
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
     });
+
+    res.cookie("token", token, { expiresIn: "7d" });
+    const { _id, username, name, email, role, photo } = user;
+    return res.json({
+      token,
+      user: { _id, username, name, email, role, photo },
+    });
+  });
 };
+
 
 exports.signout = (req, res) => {
     res.clearCookie('token');

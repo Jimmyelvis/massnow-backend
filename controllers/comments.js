@@ -126,6 +126,23 @@ exports.create = (req, res) => {
   });
 };
 
+exports.listAll = (req, res) => {
+
+  Comment.find({ })
+    .populate("postedBy", "_id name username photo")
+    .populate("post", "_id slug mainphoto title")
+    .populate("replies.postedBy", "_id name username photo")
+    .populate("recommended.recommendedBy", "_id name username photo")
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+      res.json(data);
+    });
+};
+
 exports.listFromArticle = (req, res) => {
   const post_id = req.body.post_id;
 
@@ -242,7 +259,7 @@ exports.createReply = (req, res) => {
                 });
                 console.log(error);
               }
-              
+
               res.json({
                 msg: "Successfully Added Reply",
                 comment: result

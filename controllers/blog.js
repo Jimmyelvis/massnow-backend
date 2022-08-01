@@ -146,6 +146,21 @@ exports.list = (req, res) => {
       });
 };
 
+exports.listAll = (req, res) => {
+  Blog.find({})
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ createdAt: -1 })
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+      res.json(data);
+    });
+};
+
 exports.listTopNews = (req, res) => {
   Blog.find({ featuredTopstory: { $gt: 0 } })
     .populate("categories", "_id name slug")

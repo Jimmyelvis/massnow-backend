@@ -22,12 +22,14 @@ const {
   notListFeaturedLocalNews,
   addToFavorites,
   removeFromFavorites,
+  listAll,
 } = require("../controllers/blog");
 
 const { requireSignin, adminMiddleware } = require('../controllers/auth');
 
 router.post('/blog', requireSignin, adminMiddleware, create);
 router.get('/blogs', list);
+router.get("/blogs/all", listAll);
 router.get("/blogs/sports", getSportsNews);
 router.get("/blogs/topnews", listTopNews);
 router.get("/blogs/not-topnews", listNotTopNews);
