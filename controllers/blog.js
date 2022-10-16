@@ -307,6 +307,10 @@ exports.addToFavorites = (req, res) => {
   const postAuthor = req.body.postAuthor
   const slug = req.body.slug
 
+  console.log("============req.body========================");
+  console.log(req.body);
+  console.log('====================================');
+
   User.findById(user_id, (error, results) => {
 
      if (error) {
@@ -348,6 +352,8 @@ exports.removeFromFavorites = (req, res) => {
   const user_id = req.body.user_id;
   const post_id = req.body.post_id;
 
+
+
   User.findById(user_id, (error, results) => {
 
     if (error) {
@@ -357,9 +363,7 @@ exports.removeFromFavorites = (req, res) => {
       console.log(error);
     }
 
-    console.log('====================================');
-    console.log(post_id);
-    console.log('====================================');
+
 
    let newResults = results.favorite_articles.filter((elem) => {
       return elem.post_id !== post_id

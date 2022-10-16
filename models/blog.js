@@ -58,8 +58,10 @@ const blogSchema = new mongoose.Schema(
         },
         featuredLocal: {
             type: Number
+        },
+        pageviews: {
+            type: Number
         }
-
     },
     { timestamps: true }
 );

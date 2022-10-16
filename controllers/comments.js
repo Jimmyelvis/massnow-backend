@@ -85,52 +85,49 @@ exports.create = (req, res) => {
       console.log(error);
     }
 
-     let comment = new Comment();
-     comment.postedBy = user_id;
-     comment.body = body;
-     comment.post = post_id;
-     comment.flagged = false;
+    let comment = new Comment();
+    comment.postedBy = user_id;
+    comment.body = body;
+    comment.post = post_id;
+    comment.flagged = false;
 
+    comment.save((error, result) => {
+      if (error) {
+        return res.status(400).json({
+          error: errorHandler(error),
+        });
+      }
 
-     comment.save((error, result) => {
-       if (error) {
-         return res.status(400).json({
-           error: errorHandler(error),
-         });
-       }
+      console.log("===============result=====================");
+      console.log(result);
+      console.log("====================================");
 
-       console.log("===============result=====================");
-       console.log(result);
-       console.log("====================================");
+      Comment.findById(result._id)
+        .populate("postedBy", "_id name username photo")
+        .populate("replies.postedBy", "_id name username photo")
+        .populate("recommended.recommendedBy", "_id name username photo")
+        .populate("post", "_id slug mainphoto title")
+        .exec((err, data) => {
+          if (err) {
+            return res.json({
+              error: errorHandler(err),
+            });
+          }
 
-       Comment.findById(result._id)
-         .populate("postedBy", "_id name username photo")
-         .populate("replies.postedBy", "_id name username photo")
-         .populate("recommended.recommendedBy", "_id name username photo")
-         .populate("post", "_id slug mainphoto title")
-         .exec((err, data) => {
-           if (err) {
-             return res.json({
-               error: errorHandler(err),
-             });
-           }
-
-           res.json({
-             msg: "Comment Successfully Created",
-             comment: data,
-           });
-         
-         });
-     });
-
+          res.json({
+            msg: "Comment Successfully Created",
+            comment: data,
+          });
+        });
+    });
   });
 };
 
 exports.listAll = (req, res) => {
-
-  Comment.find({ })
+  Comment.find({})
     .populate("postedBy", "_id name username photo")
-    .populate("post", "_id slug mainphoto title")
+    // .populate("post", "_id slug mainphoto title postedBy")
+    .populate({path: "post", select:"_id slug mainphoto title subtitle", populate: {path: "postedBy", select: "_id name username photo"}})
     .populate("replies.postedBy", "_id name username photo")
     .populate("recommended.recommendedBy", "_id name username photo")
     .exec((err, data) => {
@@ -228,45 +225,43 @@ exports.createReply = (req, res) => {
     .populate("replies.postedBy", "_id name username photo")
     .populate("recommended.recommendedBy", "_id name username photo")
     .exec((error, results) => {
-
-        if (error) {
-          res.json({
-            error: error,
-          });
-          console.log(error);
-        }
-    
-        const newReply = {
-          postedBy: user_id,
-          body: body,
-          flagged: false,
-          post: post_id,
-        };
-    
-        results.replies.push(newReply);
-        console.log(results);
-        results.save((error, response) => {
-
-          Comment.findById(comment_id)
-            .populate("postedBy", "_id name username photo")
-            .populate("post", "_id slug mainphoto title")
-            .populate("replies.postedBy", "_id name username photo")
-            .populate("recommended.recommendedBy", "_id name username photo")
-            .exec((error, result) => {
-              if (error) {
-                res.json({
-                  error: error,
-                });
-                console.log(error);
-              }
-
-              res.json({
-                msg: "Successfully Added Reply",
-                comment: result
-              });
-            });
+      if (error) {
+        res.json({
+          error: error,
         });
-    })
+        console.log(error);
+      }
+
+      const newReply = {
+        postedBy: user_id,
+        body: body,
+        flagged: false,
+        post: post_id,
+      };
+
+      results.replies.push(newReply);
+      console.log(results);
+      results.save((error, response) => {
+        Comment.findById(comment_id)
+          .populate("postedBy", "_id name username photo")
+          .populate("post", "_id slug mainphoto title")
+          .populate("replies.postedBy", "_id name username photo")
+          .populate("recommended.recommendedBy", "_id name username photo")
+          .exec((error, result) => {
+            if (error) {
+              res.json({
+                error: error,
+              });
+              console.log(error);
+            }
+
+            res.json({
+              msg: "Successfully Added Reply",
+              comment: result,
+            });
+          });
+      });
+    });
 };
 
 exports.repliesFromUser = (req, res) => {
@@ -319,6 +314,49 @@ exports.repliesFromUser = (req, res) => {
     });
 };
 
+exports.allReplies = (req, res) => {
+  let theReplies = [];
+
+  Comment.find({})
+    .populate("replies.postedBy", "_id name username photo")
+    .populate("post", "slug")
+    .select("replies _id post")
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+
+      let entry = {};
+
+      data.forEach((element) => {
+        /**
+         * Create a new object that contains all the info
+         * from each reply, as well as the comment ID that the
+         * reply is attached to and the post slug that the comment
+         * is attached to
+         */
+
+        element.replies.forEach((elem) => {
+          entry = {
+            body: elem.body,
+            postedBy: elem.postedBy,
+            flagged: elem.flagged,
+            date: elem.date,
+            recommended: elem.recommended,
+            slug: element.post.slug,
+            comment_id: element._id,
+          };
+
+          theReplies.push(entry);
+        });
+      });
+
+      res.json(theReplies);
+    });
+};
+
 exports.singleComment = (req, res) => {
   const comment_id = req.body.comment_id;
   const flag = req.body.flag;
@@ -329,10 +367,10 @@ exports.singleComment = (req, res) => {
    */
 
   Comment.findById(comment_id)
-    .populate("postedBy", "_id name username photo")
-    .populate("replies.postedBy", "_id name username photo")
-    .populate("recommended.recommendedBy", "_id name username photo")
-    .populate("post", "_id slug mainphoto title")
+    .populate("postedBy", "_id name username photo role email")
+    .populate("replies.postedBy", "_id name username photo role")
+    .populate("recommended.recommendedBy", "_id name username photo role")
+    .populate("post", "_id slug mainphoto title subtitle")
     .exec((err, data) => {
       if (err) {
         return res.json({
@@ -347,18 +385,70 @@ exports.singleComment = (req, res) => {
         console.log(data.recommended);
         res.json(data.recommended);
       } else {
-        res.json(data);
+        let commentInfo = {};
+
+        /**
+         * Get all the other comments that's attached the same article that this comment
+         * is attached to. Done by find all comments whose post: key is equal to
+         * data.post._id. If we get any results it will be put into the postComments
+         * variable below.
+         */
+        Comment.find({ post: data.post._id })
+          .populate("post", "_id slug mainphoto title")
+          .populate("postedBy", "_id name username photo role email")
+          .exec((err, postComments) => {
+            if (err) {
+              return res.json({
+                error: errorHandler(err),
+              });
+            }
+
+            /**
+             * Go through all the users find thoses who has the article Id from
+             * above in their favorite articles array. If we find any put then in the likes
+             * variable below.
+             */
+            User.find({ "favorite_articles.post_id": data.post._id.toString() })
+              .populate("post", "_id slug mainphoto title")
+              .populate("post", "_id slug mainphoto title")
+              .exec((error, likes) => {
+                if (error) {
+                  res.json({
+                    error: error,
+                  });
+                  console.log(error);
+                }
+
+                /**
+                 * Build an object that will contain not only all the info
+                 * for this comment, but also all the info for the article
+                 * that it is attached to.
+                 */
+                commentInfo = {
+                  ...data._doc,
+                  comments_for_post: postComments,
+                  comments_length: postComments.length,
+                  post_liked_by: likes,
+                  likes_length: likes.length,
+                };
+
+                console.log("=================commentInfo===================");
+                console.log(commentInfo);
+                console.log("====================================");
+
+                res.json(commentInfo);
+              });
+          });
       }
     });
 };
 
 // exports.createRecomended = (req, res) => {
-  
+
 //   const user_id = req.body.user_id;
 //   const comment_id = req.body.comment_id;
 //   const post_id = req.body.post_id;
 
-    
 //   Comment.findById(comment_id, (error, results) => {
 
 //       if (error) {
@@ -368,11 +458,9 @@ exports.singleComment = (req, res) => {
 //         console.log(error);
 //       }
 
-
 //      test = results.recommended.filter(elem => {
 //         return elem.recommendedBy.toString() === user_id;
 //       })
-
 
 //      if (test.length > 0) {
 //        return res
@@ -400,17 +488,14 @@ exports.singleComment = (req, res) => {
 //               });
 //             }
 
-
 //             res.json({
 //               msg: "Successfully Recommended Comment",
 //               recommended: data,
 //             });
 //           })
 
-
 //        });
 
-  
 //   });
 // }
 
@@ -419,46 +504,44 @@ exports.createRecomended = (req, res) => {
   const comment_id = req.body.comment_id;
   const post_id = req.body.post_id;
 
-  Comment.findById(comment_id )
-      .populate("postedBy", "_id name username photo")
-      .populate("post", "_id slug mainphoto title")
-      .populate("replies.postedBy", "_id name username photo")
-      .populate("recommended.recommendedBy", "_id name username photo")
-      .exec((error, results) => {
-
-        if (error) {
-          res.json({
-            error: error,
-          });
-          console.log(error);
-        }
-    
-        test = results.recommended.filter((elem) => {
-             return elem.recommendedBy._id.toString() === user_id;
+  Comment.findById(comment_id)
+    .populate("postedBy", "_id name username photo")
+    .populate("post", "_id slug mainphoto title")
+    .populate("replies.postedBy", "_id name username photo")
+    .populate("recommended.recommendedBy", "_id name username photo")
+    .exec((error, results) => {
+      if (error) {
+        res.json({
+          error: error,
         });
-    
-        if (test.length > 0) {
+        console.log(error);
+      }
 
-          console.log('====================================');
-          console.log('already reced');
-          console.log('====================================');
+      test = results.recommended.filter((elem) => {
+        return elem.recommendedBy._id.toString() === user_id;
+      });
 
-          return res
-            .status(400)
-            .json({ alreadyrecommened: "You already recommended this comment" });
-        }
-    
-        const newRec = {
-          recommendedBy: user_id,
-        };
-    
-        results.recommended.push(newRec);
-        // console.log(results)
-        results.save((error, response) => {
-    
-         res.json({
-           msg: "Successfully Recommended Comment",
-           comment: response,
-         });
+      if (test.length > 0) {
+        console.log("====================================");
+        console.log("already reced");
+        console.log("====================================");
+
+        return res
+          .status(400)
+          .json({ alreadyrecommened: "You already recommended this comment" });
+      }
+
+      const newRec = {
+        recommendedBy: user_id,
+      };
+
+      results.recommended.push(newRec);
+      // console.log(results)
+      results.save((error, response) => {
+        res.json({
+          msg: "Successfully Recommended Comment",
+          comment: response,
         });
-      })}
+      });
+    });
+};

@@ -80,20 +80,93 @@ exports.update = (req, res) => {
     //   user.photo.contentType = files.photo.type;
     // }
 
-     user.save((err, result) => {
-       if (err) {
-         console.log(err)
-         return res.status(400).json({
-           error: errorHandler(err),
-         });
-       }
-       user.hashed_password = undefined;
-       user.salt = undefined;
-       res.json(user);
-     });
+    user.save((err, result) => {
+      if (err) {
+        console.log(err);
+        return res.status(400).json({
+          error: errorHandler(err),
+        });
+      }
+      user.hashed_password = undefined;
+      user.salt = undefined;
+      res.json(user);
+    });
   });
 };
 
+exports.allusers = (req, res) => {
+  User.find({}).exec((err, data) => {
+    if (err) {
+      return res.json({
+        error: errorHandler(err),
+      });
+    }
+    res.json(data);
+  });
+};
+
+exports.oneUser = (req, res) => {
+  const username = req.body.username;
+
+  User.findOne({ username: username }).exec((err, data) => {
+    if (err) {
+      return res.json({
+        error: errorHandler(err),
+      });
+    }
+    res.json(data);
+  });
+};
+
+exports.changeUser = (req, res) => {
+  const username = req.body.username;
+  const role = req.body.role;
+
+  console.log("==============role======================");
+  console.log(role);
+  console.log("====================================");
+
+  User.findOne({ username: username })
+    // .select(
+    //   "_id role name email profile username photo about"
+    // )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+
+      data.role = role;
+
+      data.save((error, results) => {
+        if (error) {
+          return res.status(400).json({
+            error: "Can't Save",
+          });
+        }
+        res.json({ msg: "User Role Successfully Changed" });
+      });
+    });
+
+  // User.find({ username: username }, (error, results) => {
+
+  //   if (error) {
+  //     res.json({
+  //       error: error,
+  //     });
+  //     console.log(error);
+  //   } else {
+
+  //       results.role = role;
+  //       results.save((error, results) => {
+  //         res.json(results);
+  //       });
+
+  //   }
+
+  // })
+};
 
 // exports.photo = (req, res) => {
 //   const username = req.params.username;
