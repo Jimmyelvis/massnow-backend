@@ -40,7 +40,7 @@ exports.read = (req, res) => {
       //   .populate("tags", "_id name slug")
       .populate("postedBy", "_id name")
       .select(
-        "_id title slug excerpt categories postedBy tags createdAt updatedAt mainphoto"
+        "_id title subtitle slug excerpt categories postedBy tags createdAt updatedAt mainphoto"
       )
       .exec((err, data) => {
         if (err) {
