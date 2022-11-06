@@ -10,6 +10,7 @@ const { errorHandler } = require('../helpers/dbErrorHandler');
 const fs = require('fs');
 const { smartTrim } = require('../helpers/blog');
 const { ObjectId } = require('mongoose');
+const category = require('../models/category');
 
 exports.create = (req, res) => {
     let form = new formidable.IncomingForm();
@@ -125,13 +126,57 @@ exports.create = (req, res) => {
     });
 };
 
-// list, listAllBlogsCategoriesTags, read, remove, update
+/**
+ * Get all categories that have articles
+ */
+exports.getBlogCategories = (req, res) => {
+
+  let catArray = [];
+
+  Blog.find({})
+    .populate("categories", "_id name slug")
+    // .populate('tags', '_id name slug')
+    .populate("postedBy", "_id name username")
+    .sort({ createdAt: -1 })
+    .select("_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt")
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
+
+     data.forEach(article => {
+
+      /**
+       * Destucture the category array from each article
+       */
+      let  { categories } = article;
+
+      // console.log("==============categories======================");
+      // console.log(typeof(categories));
+      // console.log('====================================');
+
+      categories.forEach(category => {
+        
+        // push each category object onto catArray
+        catArray.push(category)
+      });
+      
+    });
+    
+      // Create new Set from catArray
+      let unique = [...new Set(catArray)];
+
+      res.json(unique);
+    });
+};
 
 exports.list = (req, res) => {
     Blog.find({})
       .populate("categories", "_id name slug")
       // .populate('tags', '_id name slug')
-      .populate("postedBy", "_id name username")
+      .populate("postedBy", "_id name username photo")
       .sort({ createdAt: -1 })
       .select(
         "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
@@ -596,7 +641,7 @@ exports.read = (req, res) => {
     const slug = req.params.slug.toLowerCase();
     Blog.findOne({ slug })
       .populate("categories", "_id name slug")
-      .populate("postedBy", "_id name username photo")
+      .populate("postedBy", "_id name username photo about email")
       .select(
         "_id title body slug subtitle mtitle mdesc mainphoto categories tags postedBy createdAt featuredTopstory featuredLocal featuredSports  updatedAt"
       )

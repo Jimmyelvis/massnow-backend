@@ -38,11 +38,6 @@ if (process.env.NODE_ENV === 'development') {
     app.use(cors({ origin: `${process.env.PRODUCTION_URL}` }));
 }
 
-/**
- * https://youtu.be/UaXzbv3W4jo?t=1344
- * Can't commit this to github has to change back to orig setup
- * Only for heroku
- */
 
 // routes middleware
 app.use('/api', blogRoutes);

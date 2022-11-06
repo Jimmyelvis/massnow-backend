@@ -23,12 +23,14 @@ const {
   addToFavorites,
   removeFromFavorites,
   listAll,
+  getBlogCategories,
 } = require("../controllers/blog");
 
 const { requireSignin, adminMiddleware } = require('../controllers/auth');
 
 router.post('/blog', requireSignin, adminMiddleware, create);
 router.get('/blogs', list);
+router.get("/blogs/categories", getBlogCategories);
 router.get("/blogs/all", listAll);
 router.get("/blogs/sports", getSportsNews);
 router.get("/blogs/topnews", listTopNews);
