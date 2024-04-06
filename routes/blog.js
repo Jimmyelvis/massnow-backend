@@ -1,4 +1,7 @@
 const express = require('express');
+const multer = require('multer');
+const storage = multer.memoryStorage(); // Configures Multer to store files in memory
+const upload = multer({ storage: storage });
 const router = express.Router();
 const {
   create,
@@ -24,10 +27,13 @@ const {
   removeFromFavorites,
   listAll,
   getBlogCategories,
+  uploadImage
 } = require("../controllers/blog");
 
 const { requireSignin, adminMiddleware } = require('../controllers/auth');
 
+
+router.post("/upload-image", upload.single('image'), uploadImage);
 router.post('/blog', requireSignin, adminMiddleware, create);
 router.get('/blogs', list);
 router.get("/blogs/categories", getBlogCategories);

@@ -11,6 +11,31 @@ const fs = require('fs');
 const { smartTrim } = require('../helpers/blog');
 const { ObjectId } = require('mongoose');
 const category = require('../models/category');
+const cloudinary = require('cloudinary');
+const multer = require('multer');
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_NAME,
+  api_key: process.env.CLOUDINARY_KEY,
+  api_secret: process.env.CLOUDINARY_SECRET,
+});
+
+
+exports.uploadImage = async (req, res) => {
+
+
+
+  try {
+    // console.log(req.body);
+    const result = await cloudinary.uploader.upload(req.body.image);
+    // console.log(result);
+    res.json(result.secure_url);
+  } catch (err) {
+    console.log(err);
+  }
+
+
+};
 
 exports.create = (req, res) => {
     let form = new formidable.IncomingForm();
@@ -31,7 +56,7 @@ exports.create = (req, res) => {
 
        
 
-        const { title, subtitle, body, categories, tags, mainphoto } = fields;
+        const { title, subtitle, body, categories, tags, mainphoto, headerPhoto } = fields;
 
         if (!title || !title.length) {
             return res.status(400).json({
@@ -79,6 +104,7 @@ exports.create = (req, res) => {
         blog.subtitle = subtitle;
         blog.body = body;
         blog.mainphoto = mainphoto;
+        blog.headerPhoto = headerPhoto;
         blog.excerpt = smartTrim(body, 320, ' ', ' ...');
         blog.slug = slugify(title).toLowerCase();
         blog.mtitle = `${title} | ${process.env.APP_NAME}`;
@@ -643,7 +669,7 @@ exports.read = (req, res) => {
       .populate("categories", "_id name slug")
       .populate("postedBy", "_id name username photo about email")
       .select(
-        "_id title body slug subtitle mtitle mdesc mainphoto categories tags postedBy createdAt featuredTopstory featuredLocal featuredSports  updatedAt"
+        "_id title body slug subtitle mtitle mdesc mainphoto headerPhoto categories tags postedBy createdAt featuredTopstory featuredLocal featuredSports  updatedAt"
       )
       .exec((err, data) => {
         if (err) {

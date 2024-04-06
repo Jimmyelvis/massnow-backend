@@ -41,6 +41,9 @@ const blogSchema = new mongoose.Schema(
         mainphoto: {
             type: String
         },
+        headerPhoto: {
+            type: String
+        },
         tags: {
             type: [String],
             required: true
