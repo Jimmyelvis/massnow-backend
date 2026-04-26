@@ -105,6 +105,59 @@ exports.allusers = (req, res) => {
   });
 };
 
+exports.getAuthors = (req, res) => {
+  User.find({ role: 1 })
+  .select("_id name email profile username photo about")
+  .exec((err, data) => {
+    if (err) {
+      return res.json({
+        error: errorHandler(err),
+      });
+    }
+
+    // get blogs for each author
+  //  let authoredBlogs = data.forEach((author) => {
+  //     Blog.find({ postedBy: author._id }).exec((err, blogs) => {
+  //       if (err) {
+  //         return res.json({
+  //           error: errorHandler(err),
+  //         });
+  //       }
+  //       author.blogs = blogs;
+  //     });
+  //   });
+
+    let results = [];
+
+    let theBlogs
+    data.forEach((author) => {
+
+    theBlogs = Blog.find({ postedBy: author._id }).exec((err, blogs) => {
+        if (err) {
+          return res.json({
+            error: errorHandler(err),
+          });
+        }
+        author.blogs = blogs;
+
+          // console.log('====================================');
+          // console.log("blogs", blogs);
+          // console.log('====================================');
+      });
+
+      console.log('====================================');
+      console.log("the blogs", theBlogs);
+      console.log('====================================');
+      
+      results.push(author);
+    });
+
+  
+
+    res.json(results);
+  });
+};
+
 exports.oneUser = (req, res) => {
   const username = req.body.username;
 

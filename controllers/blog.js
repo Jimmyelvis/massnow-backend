@@ -2,6 +2,7 @@ const Blog = require('../models/blog');
 const Category = require('../models/category');
 const User = require('../models/user')
 const Tag = require('../models/tag');
+const Media = require('../models/media');
 const formidable = require('formidable');
 const slugify = require('slugify');
 const stripHtml = require('string-strip-html');
@@ -114,6 +115,7 @@ exports.create = (req, res) => {
         blog.featuredTopstory = 0;
         blog.featuredSports = 0;
         blog.featuredLocal = 0;
+        blog.featuredWeather = 0;
 
         // categories and tags
         let arrayOfCategories = categories && categories.split(',');
@@ -134,6 +136,44 @@ exports.create = (req, res) => {
                     error: errorHandler(err)
                 });
             }
+
+            let mainphotomedia = new Media();
+            let headerphotomedia = new Media();
+
+            mainphotomedia.url = mainphoto;
+            mainphotomedia.postedBy = req.user._id;
+            mainphotomedia.public_id = result._id + "-mainphoto";
+
+            headerphotomedia.url = headerPhoto;
+            headerphotomedia.postedBy = req.user._id;
+            headerphotomedia.public_id = result._id + "-headerphoto";
+
+            mainphotomedia.save((err, data) => {
+                if (err) {
+                    console.log('====================================');
+                    console.log('Error Saving Main Photo Media', err);
+                    console.log('====================================');
+                } else {
+                    console.log('====================================');
+                    console.log('Main Photo Media Saved', data);
+                    console.log('====================================');
+                }
+            });
+
+            headerphotomedia.save((err, data) => {
+                if (err) {
+                    console.log('====================================');
+                    console.log('Error Saving Header Photo Media', err);
+                    console.log('====================================');
+                } else {
+                    console.log('====================================');
+                    console.log('Header Photo Media Saved', data);
+                    console.log('====================================');
+                }   
+
+            });
+       
+
             // res.json(result);
             Blog.findByIdAndUpdate(result._id, { $push: { categories: arrayOfCategories } }, { new: true }).exec(
                 (err, result) => {
@@ -164,7 +204,7 @@ exports.getBlogCategories = (req, res) => {
     // .populate('tags', '_id name slug')
     .populate("postedBy", "_id name username")
     .sort({ createdAt: -1 })
-    .select("_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt")
+    .select("_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt")
     .exec((err, data) => {
       if (err) {
         return res.json({
@@ -205,7 +245,7 @@ exports.list = (req, res) => {
       .populate("postedBy", "_id name username photo")
       .sort({ createdAt: -1 })
       .select(
-        "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+        "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
       )
       .exec((err, data) => {
         if (err) {
@@ -238,7 +278,7 @@ exports.listTopNews = (req, res) => {
     .populate("postedBy", "_id name username")
     .sort({ featuredTopstory: 1 })
     .select(
-      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
     )
     .exec((err, data) => {
       if (err) {
@@ -255,7 +295,7 @@ exports.listNotTopNews = (req, res) => {
     .populate("categories", "_id name slug")
     .populate("postedBy", "_id name username")
     .select(
-      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
     )
     .exec((err, data) => {
       if (err) {
@@ -275,7 +315,27 @@ exports.getSportsNews = (req, res) => {
     .populate("postedBy", "_id name username")
     .sort({ createdAt: -1 })
     .select(
-      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: err,
+        });
+      }
+      res.json(data);
+    });
+};
+
+exports.getLocalNews = (req, res) => {
+  /** We have to search by category ID */
+
+  Blog.find({ categories: "5f7ba819f98efee1d0650dec" })
+    .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ createdAt: -1 })
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
     )
     .exec((err, data) => {
       if (err) {
@@ -288,13 +348,34 @@ exports.getSportsNews = (req, res) => {
 };
 
 
+exports.getWeatherNews = (req, res) => {
+
+  Blog.find({ "categories" : "6351cf810754f48ee8cec27f"})
+  .populate("categories", "_id name slug")
+    .populate("postedBy", "_id name username")
+    .sort({ createdAt: -1 })
+    .select(
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
+    )
+    .exec((err, data) => {
+         if (err) {
+        return res.json({
+          error: err,
+        });
+      }
+      res.json(data);
+    })
+
+}
+
+
 exports.listFeaturedSportsNews = (req, res) => {
   Blog.find({ featuredSports: { $gt: 0 } })
     .populate("categories", "_id name slug")
     .populate("postedBy", "_id name username")
     .sort({ featuredSports: 1 })
     .select(
-      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
     )
     .exec((err, data) => {
       if (err) {
@@ -315,7 +396,7 @@ exports.notListFeaturedSportsNews = (req, res) => {
     .populate("postedBy", "_id name username")
     .sort({ createdAt: -1 })
     .select(
-      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
     )
     .exec((err, data) => {
       if (err) {
@@ -333,7 +414,7 @@ exports.listFeaturedLocalNews = (req, res) => {
     .populate("postedBy", "_id name username")
     .sort({ featuredLocal: 1 })
     .select(
-      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
     )
     .exec((err, data) => {
       if (err) {
@@ -358,7 +439,7 @@ exports.notListFeaturedLocalNews = (req, res) => {
     .populate("postedBy", "_id name username")
     .sort({ createdAt: -1 })
     .select(
-      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports mainphoto createdAt updatedAt"
+      "_id title subtitle slug excerpt categories tags postedBy mdesc featuredTopstory featuredLocal featuredSports featuredWeather mainphoto createdAt updatedAt"
     )
     .exec((err, data) => {
       if (err) {
@@ -624,7 +705,7 @@ exports.listAllBlogsCategoriesTags = (req, res) => {
       .skip(skip)
       .limit(limit)
       .select(
-        "_id title slug excerpt categories tags mainphoto postedBy createdAt featuredTopstory updatedAt"
+        "_id title slug excerpt categories tags mainphoto postedBy createdAt featuredTopstory featuredLocal featuredSports featuredWeather updatedAt"
       )
       .exec((err, data) => {
         if (err) {
@@ -669,7 +750,7 @@ exports.read = (req, res) => {
       .populate("categories", "_id name slug")
       .populate("postedBy", "_id name username photo about email")
       .select(
-        "_id title body slug subtitle mtitle mdesc mainphoto headerPhoto categories tags postedBy createdAt featuredTopstory featuredLocal featuredSports  updatedAt"
+        "_id title body slug subtitle mtitle mdesc mainphoto headerPhoto categories tags postedBy createdAt featuredTopstory featuredLocal featuredSports featuredWeather updatedAt"
       )
       .exec((err, data) => {
         if (err) {

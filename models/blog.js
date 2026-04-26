@@ -62,6 +62,9 @@ const blogSchema = new mongoose.Schema(
         featuredLocal: {
             type: Number
         },
+        featuredWeather: {
+            type: Number
+        },
         pageviews: {
             type: Number
         }

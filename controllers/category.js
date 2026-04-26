@@ -46,7 +46,7 @@ exports.read = (req, res) => {
           .populate("postedBy", "_id name")
           .sort({ updatedAt: -1 })
           .select(
-            "_id title slug excerpt featuredTopstory featuredSports featuredLocal mainphoto subtitle categories postedBy tags createdAt updatedAt"
+                        "_id title slug excerpt featuredTopstory featuredSports featuredLocal featuredWeather mainphoto subtitle categories postedBy tags createdAt updatedAt"
           )
           .exec((err, data) => {
             if (err) {

@@ -19,6 +19,7 @@ const {
   listFeaturedSportsNews,
   notListFeaturedSportsNews,
   getSportsNews,
+  getWeatherNews,
   editTopSportsNewsSection,
   editTopLocalNewsSection,
   listFeaturedLocalNews,
@@ -27,7 +28,8 @@ const {
   removeFromFavorites,
   listAll,
   getBlogCategories,
-  uploadImage
+  uploadImage,
+  getLocalNews
 } = require("../controllers/blog");
 
 const { requireSignin, adminMiddleware } = require('../controllers/auth');
@@ -39,6 +41,8 @@ router.get('/blogs', list);
 router.get("/blogs/categories", getBlogCategories);
 router.get("/blogs/all", listAll);
 router.get("/blogs/sports", getSportsNews);
+router.get("/blogs/local", getLocalNews);
+router.get("/blogs/weather", getWeatherNews);
 router.get("/blogs/topnews", listTopNews);
 router.get("/blogs/not-topnews", listNotTopNews);
 router.put("/blogs/edit-topnews/", requireSignin, adminMiddleware,  editTopNewsSection);
