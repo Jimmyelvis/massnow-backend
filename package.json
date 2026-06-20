@@ -9,6 +9,10 @@
     "data:import": "node utils/seeder",
     "data:destroy": "node utils/seeder -d"
   },
+  "engines": {
+    "node": "24.x",
+    "npm": "11.x"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
