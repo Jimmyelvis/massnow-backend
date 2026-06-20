@@ -8,13 +8,21 @@ const categorySchema = new mongoose.Schema(
             required: true,
             max: 32
         },
+        description : {
+            type: String,
+            trim: true,
+            max: 2000
+         },
+         image: {
+            type: String
+         },
         slug: {
             type: String,
             unique: true,
-            index: true
+            // index: true
         }
     },
-    { timestamp: true }
+    { timestamps: true }
 );
 
 module.exports = mongoose.model('Category', categorySchema);

@@ -12,6 +12,7 @@ const userRoutes = require('./routes/user');
 const categoryRoutes = require('./routes/category');
 const tagRoutes = require('./routes/tag');
 const commentRoutes = require('./routes/comment');
+const settingsRoutes = require('./routes/settings');
 
 
 
@@ -46,7 +47,7 @@ app.use('/api', userRoutes);
 app.use('/api', categoryRoutes);
 app.use('/api', tagRoutes);
 app.use("/api", commentRoutes);
-
+app.use("/api", settingsRoutes);
 
 
 

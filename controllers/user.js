@@ -4,6 +4,9 @@ const _ = require("lodash");
 const formidable = require("formidable");
 const fs = require("fs");
 const { errorHandler } = require("../helpers/dbErrorHandler");
+const shortId = require("shortid");
+const jwt = require("jsonwebtoken");
+const expressJwt = require("express-jwt");
 
 exports.read = (req, res) => {
   req.profile.hashed_password = undefined;
@@ -28,9 +31,7 @@ exports.publicProfile = (req, res) => {
       // .populate("tags", "_id name slug")
       .populate("postedBy", "_id name photo")
       .limit(10)
-      .select(
-        "_id title slug excerpt categories subtitle tags postedBy mainphoto createdAt updatedAt"
-      )
+      .select("_id title slug excerpt categories subtitle tags postedBy mainphoto createdAt updatedAt")
       .exec((err, data) => {
         if (err) {
           return res.status(400).json({
@@ -107,55 +108,43 @@ exports.allusers = (req, res) => {
 
 exports.getAuthors = (req, res) => {
   User.find({ role: 1 })
-  .select("_id name email profile username photo about")
-  .exec((err, data) => {
-    if (err) {
-      return res.json({
-        error: errorHandler(err),
-      });
-    }
+    .select("_id name email profile username photo about")
+    .exec((err, data) => {
+      if (err) {
+        return res.json({
+          error: errorHandler(err),
+        });
+      }
 
-    // get blogs for each author
-  //  let authoredBlogs = data.forEach((author) => {
-  //     Blog.find({ postedBy: author._id }).exec((err, blogs) => {
-  //       if (err) {
-  //         return res.json({
-  //           error: errorHandler(err),
-  //         });
-  //       }
-  //       author.blogs = blogs;
-  //     });
-  //   });
+      let results = [];
 
-    let results = [];
+      let theBlogs;
 
-    let theBlogs
-    data.forEach((author) => {
-
-    theBlogs = Blog.find({ postedBy: author._id }).exec((err, blogs) => {
-        if (err) {
-          return res.json({
-            error: errorHandler(err),
-          });
-        }
-        author.blogs = blogs;
-
-          // console.log('====================================');
-          // console.log("blogs", blogs);
-          // console.log('====================================');
-      });
-
-      console.log('====================================');
-      console.log("the blogs", theBlogs);
-      console.log('====================================');
-      
-      results.push(author);
+      res.json(data);
     });
+};
 
+exports.getBlogsByAuthor = (req, res) => {
+  let userId = req.params.userId;
+
+  let limit = req.query.limit ? parseInt(req.query.limit) : 10;
   
 
-    res.json(results);
-  });
+  Blog.find({ postedBy: userId })
+    .populate("categories", "_id name slug")
+    // .populate("tags", "_id name slug")
+    .populate("postedBy", "_id name photo")
+    .limit(limit)
+    .select("_id title slug excerpt categories subtitle tags postedBy mainphoto createdAt updatedAt")
+    .exec((err, data) => {
+      if (err) {
+        console.log("RAW ERROR:", err);
+        return res.status(400).json({
+          error: errorHandler(err),
+        });
+      }
+      res.json(data);
+    });
 };
 
 exports.oneUser = (req, res) => {
@@ -201,37 +190,47 @@ exports.changeUser = (req, res) => {
         res.json({ msg: "User Role Successfully Changed" });
       });
     });
-
-  // User.find({ username: username }, (error, results) => {
-
-  //   if (error) {
-  //     res.json({
-  //       error: error,
-  //     });
-  //     console.log(error);
-  //   } else {
-
-  //       results.role = role;
-  //       results.save((error, results) => {
-  //         res.json(results);
-  //       });
-
-  //   }
-
-  // })
 };
 
-// exports.photo = (req, res) => {
-//   const username = req.params.username;
-//   User.findOne({ username }).exec((err, user) => {
-//     if (err || !user) {
-//       return res.status(400).json({
-//         error: "User not found",
-//       });
-//     }
-//     if (user.photo.data) {
-//       res.set("Content-Type", user.photo.contentType);
-//       return res.send(user.photo.data);
-//     }
-//   });
-// };
+exports.createUser = (req, res) => {
+  const { name, email, password, role, username } = req.body;
+
+  User.findOne({ email: email }).exec((err, userFromDB) => {
+    if (userFromDB) {
+      return res.status(400).json({
+        error: "Email is taken",
+      });
+    }
+
+    User.findOne({ username: username }).exec((err, userFromDB) => {
+      if (userFromDB) {
+        return res.status(400).json({
+          error: "Username already exists",
+        });
+      }
+
+      // // check for required fields
+      // if (!name || !email || !password || !role || !username) {
+      //   return res.status(400).json({
+      //     error: "All fields are required",
+      //   });
+      // }
+
+      let profile = `${process.env.CLIENT_URL}/profile/${username}`;
+
+      let hashed_password = password;
+
+      let newUser = new User({ name, email, hashed_password, profile, username, role });
+      newUser.save((err, success) => {
+        if (err) {
+          return res.status(400).json({
+            error: err,
+          });
+        }
+        res.json({
+          message: "User Created Successfully",
+        });
+      });
+    });
+  });
+};

@@ -6,6 +6,7 @@ const router = express.Router();
 const {
   create,
   list,
+  list_V2,
   listAllBlogsCategoriesTags,
   read,
   remove,
@@ -29,7 +30,9 @@ const {
   listAll,
   getBlogCategories,
   uploadImage,
-  getLocalNews
+  getLocalNews,
+  getLocalNewsV2,
+  editFeaturedSection
 } = require("../controllers/blog");
 
 const { requireSignin, adminMiddleware } = require('../controllers/auth');
@@ -38,10 +41,12 @@ const { requireSignin, adminMiddleware } = require('../controllers/auth');
 router.post("/upload-image", upload.single('image'), uploadImage);
 router.post('/blog', requireSignin, adminMiddleware, create);
 router.get('/blogs', list);
+router.get('/blogs/v2', list_V2);
 router.get("/blogs/categories", getBlogCategories);
 router.get("/blogs/all", listAll);
 router.get("/blogs/sports", getSportsNews);
 router.get("/blogs/local", getLocalNews);
+// router.get("/blogs/localv2", getLocalNewsV2);
 router.get("/blogs/weather", getWeatherNews);
 router.get("/blogs/topnews", listTopNews);
 router.get("/blogs/not-topnews", listNotTopNews);
@@ -61,6 +66,12 @@ router.put(
   requireSignin,
   adminMiddleware,
   editTopLocalNewsSection
+);
+router.put(
+  "/blogs/edit-featuredsection/",
+  requireSignin,
+  adminMiddleware,
+  editFeaturedSection
 );
 router.post('/blogs-categories-tags', listAllBlogsCategoriesTags);
 router.get('/blog/:slug', read);

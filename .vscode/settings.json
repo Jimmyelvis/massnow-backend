@@ -2,5 +2,6 @@
   "workbench.colorTheme": "Noctis Lilac",
   "cSpell.words": [
     "alreadyrecommened"
-  ]
+  ],
+  "compile-hero.disable-compile-files-on-did-save-code": false
 }
